@@ -3,6 +3,9 @@ const assert = std.debug.assert;
 const math = std.math;
 const mem = std.mem;
 
+const config = @import("config.zig");
+const util = @import("util.zig");
+
 /// keys_count must be one less than a power of two. This allows us to align the layout
 /// such that great great grandchildren of a node are not unnecessarily split across cache lines.
 pub fn eytzinger(comptime keys_count: u32, comptime values_max: u32) type {
@@ -214,6 +217,14 @@ pub fn eytzinger(comptime keys_count: u32, comptime values_max: u32) type {
             var i: u32 = 0;
             while (i < keys.len) {
                 // TODO use @prefetch when available: https://github.com/ziglang/zig/issues/3600
+                const offset = config.cache_line_size + config.cache_line_size / 2;
+                util.prefetch(
+                    @ptrToInt(keys) + config.cache_line_size * i + offset,
+                    .read,
+                    .high,
+                    .data,
+                );
+
                 i = if (compare_keys(key, keys[i]) == .gt) 2 * i + 2 else 2 * i + 1;
             }
 

@@ -2,6 +2,8 @@ const std = @import("std");
 const assert = std.debug.assert;
 const math = std.math;
 
+const util = @import("util.zig");
+
 // TODO Add prefeching when @prefetch is available: https://github.com/ziglang/zig/issues/3600.
 //
 // TODO The Zig self hosted compiler will implement inlining itself before passing the IR to llvm,
@@ -21,6 +23,9 @@ pub fn binary_search(
     while (length > 1) {
         const half = length / 2;
         const mid = offset + half;
+
+        util.prefetch(@ptrToInt(&values[half / 2]), .read, .none, .data);
+        util.prefetch(@ptrToInt(&values[half + half / 2]), .read, .none, .data);
 
         // This trick seems to be what's needed to get llvm to emit branchless code for this,
         // a ternay-style if expression was generated as a jump here for whatever reason.
